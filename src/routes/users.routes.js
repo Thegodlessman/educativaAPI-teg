@@ -7,19 +7,22 @@ router.get('/users', (req, res) =>{
 })
 
 router.get('/users/:id', (req, res) =>{
-    const {id} = req.params
+    const { id } = req.params
     res.send('Obteniendo usuario' + id)
 })
 
 router.post('/users', (req, res) =>{
+    const { id } = req.params
     res.send('Creando Usuario')
 })
 
 router.delete('/users/:id', (req, res) =>{
+    const { id } = req.params
     res.send('Eliminando usuario')
 })
 
 router.put('/users/:id', (req, res) =>{
+    const { id } = req.params
     res.send('Actualizar un usuario')
 })
 
