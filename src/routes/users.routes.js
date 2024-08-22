@@ -1,14 +1,26 @@
 import { Router } from "express";
+import { pool } from "../db.js";
+
 
 const router = Router();
 
-router.get('/users', (req, res) =>{
-    res.send('Obteniendo usuarios')
+router.get('/users', async (req, res) =>{
+
+    const {rows} = await pool.query('SELECT * FROM "user"')
+    console.log(rows)
+
+    res.json(rows)
 })
 
-router.get('/users/:id', (req, res) =>{
+router.get('/users/:id', async(req, res) =>{
     const { id } = req.params
-    res.send('Obteniendo usuario' + id)
+    const {rows} = await pool.query('SELECT * FROM "user" WHERE id_user = $1', [id])
+
+    if(rows.length === 0){
+        return res.status(404).json({message: "User not found"})
+    }
+
+    res.json(rows)
 })
 
 router.post('/users', (req, res) =>{
