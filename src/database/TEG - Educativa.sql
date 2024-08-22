@@ -51,4 +51,5 @@ ALTER TABLE "user_institution" ADD FOREIGN KEY ("id_inst") REFERENCES "instituti
 
 ------------ INSERTS -----------------
 
-INSERT INTO user VALUES (default, '29758164', 'Luis', 'Chang', 'luischang16@hotmail.com', 'password');
+INSERT INTO "user" VALUES (default, '29758164', 'Luis', 'Chang', 'luischang16@hotmail.com', 'password');
+INSERT INTO "user" VALUES (default, '11891376', 'Maribel', 'Piña', 'maribelpina@hotmail.com', 'password');
