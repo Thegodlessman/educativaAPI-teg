@@ -1,5 +1,6 @@
 import { pool } from "../db.js";
 import { check, validationResult } from "express-validator";
+import bcrypt from 'bcrypt';
 
 export const getUsers = async (req, res) =>{ //* Obtener todos los usuarios
 
@@ -18,6 +19,61 @@ export const getUsersById = async(req, res) =>{ //* Obtener usuario por ID
 
     res.json(rows)
 }
+
+export const loginUser = async (req, res) => {
+    const { email, password } = req.body;
+
+    // Validaciones de entrada
+    await check('email')
+        .notEmpty().withMessage('El email es obligatorio')
+        .isEmail().withMessage('El email no es válido')
+        .run(req);
+    await check('password')
+        .notEmpty().withMessage('La contraseña es obligatoria')
+        .run(req);
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ 
+            message: "Errores de validación", 
+            errors: errors.array() 
+        });
+    }
+
+    try {
+        // Buscar al usuario por email
+        const { rows } = await pool.query(
+            'SELECT * FROM "user" WHERE email = $1',
+            [email]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+
+        const user = rows[0];
+
+        // Comparar la contraseña en texto plano
+        if (user.password !== password) {
+            return res.status(401).json({ message: "Contraseña incorrecta" });
+        }
+
+        // Autenticación exitosa
+        return res.status(200).json({
+            message: "Inicio de sesión exitoso",
+            user: {
+                id_user: user.id_user,
+                ced_user: user.ced_user,
+                name: user.name,
+                lastname: user.lastname,
+                email: user.email
+            }
+        });
+    } catch (error) {
+        console.error("Error durante el inicio de sesión:", error);
+        return res.status(500).json({ message: "Error del servidor" });
+    }
+};
 
 export const createUser = async (req, res) =>{ //* Crear Usuario
     const {ced_user, name, lastname, email, password} = req.body
@@ -40,6 +96,22 @@ export const createUser = async (req, res) =>{ //* Crear Usuario
     
         console.log(req.data);
     
+        //*Verificar si el email ya está en uso por otro usuario
+        const query2 = 'SELECT * FROM "user" WHERE email = $1 ';
+        const { rowCount: emailCount } = await pool.query(query2, [email]);
+
+        if (emailCount > 0) {
+            return res.status(400).json({ message: "Email is already in use by another user" });
+        }
+
+        //*Verificar si dos personas tienen la misma cedula
+        const query3 = 'SELECT * FROM "user" WHERE ced_user = $1';
+        const { rowCount: userCount } = await pool.query(query3, [ced_user]);
+        if (userCount > 0) {
+            return res.status(400).json({ message: "Ced is already in use by another user" });
+        }
+
+
         const { rows, rowCount } = await pool.query(
             `INSERT INTO "user" (ced_user, name, lastname, email, password) 
             VALUES ($1, $2, $3, $4, $5) 

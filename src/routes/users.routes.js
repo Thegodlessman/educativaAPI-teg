@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {createUser, deleteUser, getUsers, getUsersById, updatePassword, updateUser} from '../controllers/user.controller.js'
+import {createUser, deleteUser, getUsers, getUsersById, loginUser, updatePassword, updateUser} from '../controllers/user.controller.js'
 
 const router = Router();
 
@@ -9,6 +9,9 @@ router.get('/users', getUsers)
 
 //*Traer al usuario dependiendo del ID
 router.get('/users/:id', getUsersById)
+
+//*Iniciar Sesión
+router.post('/login', loginUser)
 
 //*Crear un usuario
 router.post('/users', createUser)
