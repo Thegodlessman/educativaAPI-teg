@@ -34,11 +34,12 @@ const { ced_user, name, lastname, email, password} = req.body
     console.log(req.body)
 
     let result = validationResult(req);
+
     if (!result.isEmpty()) {
-      return res.status(400).json({
-        message: "you have these errors",
-        errors: result.array(),
-      });
+        return res.status(400).json({
+            message: "you have these errors",
+            errors: result.array(),
+        });
     }
 
     console.log(req.data);
@@ -65,7 +66,7 @@ router.delete('/users/:id', async(req, res) =>{
         return res.status(404).json({message: "User not found"})
     }
     console.log(rows)
-    return res.json({message: "User deleted"} + rows)
+    return res.json({message: "User deleted", user: rows} )
 })
 
 router.put('/users/:id', (req, res) =>{
