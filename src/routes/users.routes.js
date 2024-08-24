@@ -13,6 +13,9 @@ router.get('/users/:id', getUsersById)
 //*Iniciar Sesión
 router.post('/login', loginUser)
 
+//*Actualizar contraseña
+router.patch('/users/password/:id' , updatePassword)
+
 //*Crear un usuario
 router.post('/users', createUser)
 
@@ -22,7 +25,6 @@ router.delete('/users/:id', deleteUser)
 //*Actualizar un usuario
 router.put('/users/:id', updateUser);
 
-//*Actualizar contraseña
-router.patch('/users/password/:id' , updatePassword)
+
 
 export default router; 
