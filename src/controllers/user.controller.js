@@ -1,6 +1,6 @@
 import { pool } from "../db.js";
 import { check, validationResult } from "express-validator";
-import bcrypt from 'bcrypt';
+import { encrypt, compare }  from "../helpers/handleBcrypt.js"
 
 export const getUsers = async (req, res) =>{ //* Obtener todos los usuarios
 
@@ -20,7 +20,7 @@ export const getUsersById = async(req, res) =>{ //* Obtener usuario por ID
     res.json(rows)
 }
 
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {//* Iniciar Sesión
     const { email, password } = req.body;
 
     // Validaciones de entrada
@@ -53,8 +53,10 @@ export const loginUser = async (req, res) => {
 
         const user = rows[0];
 
-        // Comparar la contraseña en texto plano
-        if (user.password !== password) {
+        // Comparar la contraseña
+        const checkPassword = await compare(password, user.password);
+
+        if (!checkPassword) {
             return res.status(401).json({ message: "Contraseña incorrecta" });
         }
 
@@ -82,6 +84,8 @@ export const createUser = async (req, res) =>{ //* Crear Usuario
         await check('lastname').notEmpty().withMessage('the field is oblifgatory').run(req);
         await check('email').notEmpty().withMessage('the field is oblifgatory').isEmail().withMessage("the email is not valid").run(req);
         await check('password').notEmpty().withMessage('the field is oblifgatory').run(req);
+
+        const passwordHash = await encrypt(password)
     
         console.log(req.body)
     
@@ -101,14 +105,14 @@ export const createUser = async (req, res) =>{ //* Crear Usuario
         const { rowCount: emailCount } = await pool.query(query2, [email]);
 
         if (emailCount > 0) {
-            return res.status(400).json({ message: "Email is already in use by another user" });
+            return res.status(400).json({ message: "El email ya ha sido registrado" });
         }
 
         //*Verificar si dos personas tienen la misma cedula
         const query3 = 'SELECT * FROM "user" WHERE ced_user = $1';
         const { rowCount: userCount } = await pool.query(query3, [ced_user]);
         if (userCount > 0) {
-            return res.status(400).json({ message: "Ced is already in use by another user" });
+            return res.status(400).json({ message: "La cedula ya ha sido registrada" });
         }
 
 
@@ -116,7 +120,7 @@ export const createUser = async (req, res) =>{ //* Crear Usuario
             `INSERT INTO "user" (ced_user, name, lastname, email, password) 
             VALUES ($1, $2, $3, $4, $5) 
             RETURNING *`,
-            [ced_user, name, lastname, email, password]
+            [ced_user, name, lastname, email, passwordHash]
         );
             
         if(rowCount === 0){
