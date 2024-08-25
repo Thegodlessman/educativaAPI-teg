@@ -44,7 +44,7 @@ export const loginUser = async (req, res) => {//* Iniciar Sesión
     try {
         // Buscar al usuario por email
         const { rows } = await pool.query(
-            'SELECT * FROM "user" WHERE email = $1',
+            `SELECT usuario.id_user, CONCAT(usuario.name,' ', usuario.lastname) AS full_name, usuario.password, ced_user, usuario.email, rol.rol_name, rol.rol_descrip FROM "user" AS usuario INNER JOIN "role" AS rol ON usuario.id_rol = rol.id_role WHERE usuario.email = $1`,
             [email]
         );
 
@@ -63,16 +63,18 @@ export const loginUser = async (req, res) => {//* Iniciar Sesión
 
         const tokenSession = await tokenSign(user)
 
+
         //* Autenticación exitosa
         return res.status(200).json({
             message: "Inicio de sesión exitoso",
             user: {
                 id_user: user.id_user,
-                id_role: user.id_rol,
                 ced_user: user.ced_user,
-                name: user.name,
+                name: user.full_name,
                 lastname: user.lastname,
-                email: user.email
+                email: user.email,
+                rol: user.rol_name,
+                rol_descrip: user.rol_descrip
             },
             tokenSession
         });
