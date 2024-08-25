@@ -44,7 +44,19 @@ export const loginUser = async (req, res) => {//* Iniciar Sesión
     try {
         // Buscar al usuario por email
         const { rows } = await pool.query(
-            `SELECT usuario.id_user, CONCAT(usuario.name,' ', usuario.lastname) AS full_name, usuario.password, ced_user, usuario.email, rol.rol_name, rol.rol_descrip FROM "user" AS usuario INNER JOIN "role" AS rol ON usuario.id_rol = rol.id_role WHERE usuario.email = $1`,
+            `SELECT 
+                usuario.id_user, 
+                CONCAT(usuario.name,' ', usuario.lastname) AS full_name, 
+                usuario.password, ced_user, 
+                usuario.email, 
+                rol.id_role,
+                rol.rol_name
+            FROM "user" 
+            AS usuario 
+            INNER JOIN "role" 
+            AS rol 
+            ON usuario.id_rol = rol.id_role 
+            WHERE usuario.email = $1`,
             [email]
         );
 
@@ -57,8 +69,8 @@ export const loginUser = async (req, res) => {//* Iniciar Sesión
         //* Comparar la contraseña (contraseña plana, contraseña almacenada en DB)
         const checkPassword = await compare(password, user.password);
 
-        if (!checkPassword) {
-            return res.status(401).json({ message: "Contraseña incorrecta" });
+        if (!checkPassword || rows.legth === 0) {
+            return res.status(401).json({ message: "Correo Electronico o contraseña incorrectos" });
         }
 
         const tokenSession = await tokenSign(user)
@@ -71,10 +83,9 @@ export const loginUser = async (req, res) => {//* Iniciar Sesión
                 id_user: user.id_user,
                 ced_user: user.ced_user,
                 name: user.full_name,
-                lastname: user.lastname,
                 email: user.email,
-                rol: user.rol_name,
-                rol_descrip: user.rol_descrip
+                id_rol: user.id_role,
+                rol: user.rol_name
             },
             tokenSession
         });

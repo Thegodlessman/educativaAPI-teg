@@ -1,15 +1,23 @@
-export const verifyToken = (req, res, next) => {
-    const token = req.header('Authorization').replace('Bearer ', '');
+import { verifyToken } from "../helpers/generateToken";
 
-    if (!token) {
-        return res.status(401).json({ message: "Acceso denegado, token no proporcionado" });
-    }
+const authMiddleware = async (req, res, next) => {
+    try{
+        const token = req.headers['authorization']?.split(' ')[1]
+        if(!token){
+            return res.status(401).json({message: "No se ha proporcionado un token"});
+        }
 
-    try {
-        const verified = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = verified;
-        next();  // Continúa con la siguiente función del middleware o controlador
-    } catch (error) {
-        return res.status(401).json({ message: "Token no válido" });
+        const decoded = await verifyToken(token)
+
+        if(!decoded){
+            return res.status(401).json({message: "Token sin autorización"})
+        }
+
+        req.user = decoded; 
+        next();
+    }catch(error){
+        return res.status(500).json({ message: "Failed to authenticate token" });
     }
-};
+}
+
+export default authMiddleware;
