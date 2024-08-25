@@ -1,6 +1,7 @@
 import { pool } from "../db.js";
 import { check, validationResult } from "express-validator";
 import { encrypt, compare }  from "../helpers/handleBcrypt.js"
+import { tokenSign } from "../helpers/generateToken.js";
 
 export const getUsers = async (req, res) =>{ //* Obtener todos los usuarios
 
@@ -53,23 +54,27 @@ export const loginUser = async (req, res) => {//* Iniciar Sesión
 
         const user = rows[0];
 
-        // Comparar la contraseña
+        //* Comparar la contraseña (contraseña plana, contraseña almacenada en DB)
         const checkPassword = await compare(password, user.password);
 
         if (!checkPassword) {
             return res.status(401).json({ message: "Contraseña incorrecta" });
         }
 
-        // Autenticación exitosa
+        const tokenSession = await tokenSign(user)
+
+        //* Autenticación exitosa
         return res.status(200).json({
             message: "Inicio de sesión exitoso",
             user: {
                 id_user: user.id_user,
+                id_role: user.id_rol,
                 ced_user: user.ced_user,
                 name: user.name,
                 lastname: user.lastname,
                 email: user.email
-            }
+            },
+            tokenSession
         });
     } catch (error) {
         console.error("Error durante el inicio de sesión:", error);
@@ -86,11 +91,15 @@ export const createUser = async (req, res) =>{ //* Crear Usuario
         await check('password').notEmpty().withMessage('the field is oblifgatory').run(req);
 
         const passwordHash = await encrypt(password)
-    
-        console.log(req.body)
-    
+
+        const queryRole = `SELECT id_role FROM "role" WHERE rol_name = 'Usuario'`
+        const {rows: roleRows} = await pool.query(queryRole);
+        
+        const id_role = roleRows[0].id_role;
+        console.log("el id es:" + id_role)
+
         let result = validationResult(req);
-    
+
         if (!result.isEmpty()) {
             return res.status(400).json({
                 message: "you have these errors",
@@ -115,12 +124,11 @@ export const createUser = async (req, res) =>{ //* Crear Usuario
             return res.status(400).json({ message: "La cedula ya ha sido registrada" });
         }
 
-
         const { rows, rowCount } = await pool.query(
-            `INSERT INTO "user" (ced_user, name, lastname, email, password) 
-            VALUES ($1, $2, $3, $4, $5) 
+            `INSERT INTO "user" (id_rol, ced_user, name, lastname, email, password) 
+            VALUES ($1, $2, $3, $4, $5, $6) 
             RETURNING *`,
-            [ced_user, name, lastname, email, passwordHash]
+            [id_role ,ced_user, name, lastname, email, passwordHash]
         );
             
         if(rowCount === 0){
