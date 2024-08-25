@@ -3,8 +3,9 @@ import jwt from 'jsonwebtoken'
 const tokenSign = async (user) => {
     return jwt.sign(
         {
-            _id: user.id_user,
-            id_role: user.id_role
+            id_user: user.id_user,
+            id_role: user.id_role,
+            role: user.rol_name
         },
         process.env.JWT_SECRET,
         {
