@@ -74,6 +74,3 @@ ALTER TABLE "user"
 ADD FOREIGN KEY ("id_rol") REFERENCES "role" ("id_role");
 
 
-INSERT INTO "role" VALUES (default, 'Profesor', 'Este rol permite a los usuarios crear las actividades y ver el progreso de sus estudiantes')
-INSERT INTO "role" VALUES (default, 'Estudiante', 'Este rol permite a los usuarios participar en las actividades y ver su progreso')
-INSERT INTO "role" VALUES (default, 'Usuario', 'Este rol es un placeholder mientras se asigna el usuario asigna otro rol')

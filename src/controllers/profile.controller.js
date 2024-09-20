@@ -4,7 +4,7 @@ import { tokenSign } from "../helpers/generateToken.js";
 
 export const selectRole = async (req, res) => {
     const { id } = req.params;
-    const { id_role } = req.body;
+    const { id_rol } = req.body;
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -12,24 +12,24 @@ export const selectRole = async (req, res) => {
     }
 
     try {
-        const query = `UPDATE "user" SET id_rol = $1 WHERE id_user = $2 RETURNING *`;
-        const values = [id_role, id];
+        const query = `UPDATE "users" SET id_rol = $1 WHERE id_user = $2 RETURNING *`;
+        const values = [id_rol, id];
         const { rowCount } = await pool.query(query, values); 
             
         // Cambia aquí para pasar el valor como un arreglo
         const { rows } = await pool.query(
             `SELECT 
                 usuario.id_user, 
-                CONCAT(usuario.name,' ', usuario.lastname) AS full_name, 
-                usuario.password, 
-                usuario.ced_user, 
-                usuario.email, 
-                rol.id_role,
+                CONCAT(usuario.user_name,' ', usuario.user_lastname) AS full_name, 
+                usuario.user_password, 
+                usuario.user_ced, 
+                usuario.user_email, 
+                rol.id_rol,
                 rol.rol_name
-            FROM "user" AS usuario 
-            INNER JOIN "role" AS rol 
-            ON usuario.id_rol = rol.id_role 
-            WHERE usuario.id_user = $1`, [id]); // Asegúrate de pasar el valor como un arreglo
+            FROM "users" AS usuario 
+            INNER JOIN "roles" AS rol 
+            ON usuario.id_rol = rol.id_rol 
+            WHERE usuario.id_user = $1`, [id]);
 
         if (rowCount === 0) {
             return res.status(404).json({ message: "User not found" });
@@ -52,7 +52,7 @@ export const getRoleId = async (req, res) => {
     console.log(rol_name)
     try {
         // Esperar el resultado de la consulta
-        const { rows } = await pool.query('SELECT * FROM "role" WHERE rol_name = $1', [rol_name]);
+        const { rows } = await pool.query('SELECT * FROM "roles" WHERE rol_name = $1', [rol_name]);
 
         // Verificar si se encontraron filas
         if (rows.length === 0) {
@@ -60,9 +60,9 @@ export const getRoleId = async (req, res) => {
         }
 
         // Asumir que el id_role está en la primera fila del resultado
-        const idRole = rows[0].id_role;
+        const idRole = rows[0].id_rol;
 
-        res.json({ id_role: idRole });
+        res.json({ id_rol: idRole });
     } catch (error) {
         console.error('Error getting role ID:', error);
         res.status(500).json({ message: "Error getting role ID", error: error.message });

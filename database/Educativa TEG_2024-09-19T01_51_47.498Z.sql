@@ -1,6 +1,8 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Tabla de roles
 CREATE TABLE "roles" (
-    "id_rol" UUID NOT NULL UNIQUE,
+    "id_rol" UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
     "rol_name" VARCHAR NOT NULL,
     "rol_descrip" VARCHAR NOT NULL,
     PRIMARY KEY("id_rol")
@@ -8,7 +10,7 @@ CREATE TABLE "roles" (
 
 -- Tabla de usuarios
 CREATE TABLE "users" (
-    "id_user" UUID NOT NULL UNIQUE,
+    "id_user" UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
     "id_rol" UUID NOT NULL,
     "user_url" VARCHAR NOT NULL,
     "user_ced" VARCHAR NOT NULL,
@@ -22,7 +24,7 @@ CREATE TABLE "users" (
 
 -- Tabla de instituciones
 CREATE TABLE "institutions" (
-    "id_insti" UUID NOT NULL UNIQUE,
+    "id_insti" UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
     "id_location" UUID NOT NULL,
     "insti_url" VARCHAR NOT NULL,
     "insti_name" VARCHAR NOT NULL,
@@ -32,14 +34,14 @@ CREATE TABLE "institutions" (
 
 -- Tabla de países
 CREATE TABLE "countries" (
-    "id_country" UUID NOT NULL UNIQUE,
+    "id_country" UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
     "country_name" VARCHAR NOT NULL,
     PRIMARY KEY("id_country")
 );
 
 -- Tabla de estados/provincias
 CREATE TABLE "states" (
-    "id_state" UUID NOT NULL UNIQUE,
+    "id_state" UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
     "state_name" VARCHAR NOT NULL,
     "id_country" UUID NOT NULL,
     PRIMARY KEY("id_state"),
@@ -48,7 +50,7 @@ CREATE TABLE "states" (
 
 -- Tabla de municipios
 CREATE TABLE "municipalities" (
-    "id_municipality" UUID NOT NULL UNIQUE,
+    "id_municipality" UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
     "municipality_name" VARCHAR NOT NULL,  -- Cambio a VARCHAR
     "id_state" UUID NOT NULL,
     PRIMARY KEY("id_municipality"),
@@ -57,7 +59,7 @@ CREATE TABLE "municipalities" (
 
 -- Tabla de parroquias
 CREATE TABLE "parishes" (
-    "id_parish" UUID NOT NULL UNIQUE,
+    "id_parish" UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
     "parish_name" VARCHAR NOT NULL,
     "id_municipality" UUID NOT NULL,
     PRIMARY KEY("id_parish"),
@@ -66,7 +68,7 @@ CREATE TABLE "parishes" (
 
 -- Tabla intermedia para usuarios e instituciones
 CREATE TABLE "users_institutions" (
-    "id_user_institution" UUID NOT NULL UNIQUE,
+    "id_user_institution" UUID NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
     "id_user" UUID NOT NULL,
     "id_institution" UUID NOT NULL,
     PRIMARY KEY("id_user_institution"),
@@ -74,3 +76,8 @@ CREATE TABLE "users_institutions" (
     FOREIGN KEY ("id_institution") REFERENCES "institutions"("id_insti"),
 	UNIQUE ("id_user", "id_institution")
 );
+
+
+INSERT INTO "roles" VALUES (default, 'Profesor', 'Este rol permite a los usuarios crear las actividades y ver el progreso de sus estudiantes')
+INSERT INTO "roles" VALUES (default, 'Estudiante', 'Este rol permite a los usuarios participar en las actividades y ver su progreso')
+INSERT INTO "roles" VALUES (default, 'Usuario', 'Este rol es un placeholder mientras se asigna el usuario asigna otro rol')
