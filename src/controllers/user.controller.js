@@ -98,60 +98,58 @@ export const loginUser = async (req, res) => {//* Iniciar Sesión
 
 export const createUser = async (req, res) =>{ //* Crear Usuario
     const {user_ced, user_name, user_lastname, user_email, user_password} = req.body
-        await check('user_ced').notEmpty().withMessage('the cedula is obligatory').isNumeric().withMessage("The cedula can only be numeric").run(req);
-        await check('user_name').notEmpty().withMessage('the name is oblifgatory').run(req);
-        await check('user_lastname').notEmpty().withMessage('the field is oblifgatory').run(req);
-        await check('user_email').notEmpty().withMessage('the field is oblifgatory').isEmail().withMessage("the email is not valid").run(req);
-        await check('user_password').notEmpty().withMessage('the field is oblifgatory').run(req);
+    
+    await check('user_ced').notEmpty().withMessage('the cedula is obligatory').isNumeric().withMessage("The cedula can only be numeric").run(req);
+    await check('user_name').notEmpty().withMessage('the name is oblifgatory').run(req);
+    await check('user_lastname').notEmpty().withMessage('the field is oblifgatory').run(req);
+    await check('user_email').notEmpty().withMessage('the field is oblifgatory').isEmail().withMessage("the email is not valid").run(req);
+    await check('user_password').notEmpty().withMessage('the field is oblifgatory').run(req);
 
-        const defaultURL = 'AQUI IRA UNA URL';
+    const defaultURL = 'AQUI IRA UNA URL';
 
-        const passwordHash = await encrypt(user_password)
+    const passwordHash = await encrypt(user_password)
 
-        const queryRole = `SELECT id_rol FROM "roles" WHERE rol_name = 'Usuario'`
-        const {rows: roleRows} = await pool.query(queryRole);
+    const queryRole = `SELECT id_rol FROM "roles" WHERE rol_name = 'Usuario'`
+    const {rows: roleRows} = await pool.query(queryRole);
         
-        const id_rol = roleRows[0].id_rol;
-        console.log("el id es:" + id_rol)
+    const id_rol = roleRows[0].id_rol;
 
-        let result = validationResult(req);
+    let result = validationResult(req);
 
-        if (!result.isEmpty()) {
-            return res.status(400).json({
-                message: "you have these errors",
-                errors: result.array(),
-            });
-        }
+    if (!result.isEmpty()) {
+        return res.status(400).json({
+            message: "you have these errors",
+            errors: result.array(),
+        });
+    }
     
-        console.log(req.data);
+    //*Verificar si el email ya está en uso por otro usuario
+    const query2 = 'SELECT * FROM "users" WHERE user_email = $1 ';
+    const { rowCount: emailCount } = await pool.query(query2, [user_email]);
+
+    if (emailCount > 0) {
+        return res.status(400).json({ message: "El email ya ha sido registrado" });
+    }
+
+    //*Verificar si dos personas tienen la misma cedula
+    const query3 = 'SELECT * FROM "users" WHERE user_ced = $1';
+    const { rowCount: userCount } = await pool.query(query3, [user_ced]);
+    if (userCount > 0) {
+        return res.status(400).json({ message: "La cedula ya ha sido registrada" });
+    }
+
+    const { rows, rowCount } = await pool.query(
+        `INSERT INTO "users" (id_rol, user_url, user_ced, user_name, user_lastname, user_email, user_password) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7) 
+        RETURNING *`,
+        [id_rol, defaultURL, user_ced, user_name, user_lastname, user_email, passwordHash]
+    );
     
-        //*Verificar si el email ya está en uso por otro usuario
-        const query2 = 'SELECT * FROM "users" WHERE user_email = $1 ';
-        const { rowCount: emailCount } = await pool.query(query2, [user_email]);
-
-        if (emailCount > 0) {
-            return res.status(400).json({ message: "El email ya ha sido registrado" });
-        }
-
-        //*Verificar si dos personas tienen la misma cedula
-        const query3 = 'SELECT * FROM "users" WHERE user_ced = $1';
-        const { rowCount: userCount } = await pool.query(query3, [user_ced]);
-        if (userCount > 0) {
-            return res.status(400).json({ message: "La cedula ya ha sido registrada" });
-        }
-
-        const { rows, rowCount } = await pool.query(
-            `INSERT INTO "users" (id_rol, user_url, user_ced, user_name, user_lastname, user_email, user_password) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7) 
-            RETURNING *`,
-            [id_rol, defaultURL, user_ced, user_name, user_lastname, user_email, passwordHash]
-        );
-            
-        if(rowCount === 0){
-            return res.status(404).json({message: 'something happened idj'});
-        }
+    if(rowCount === 0){
+        return res.status(404).json({message: 'something happened idj'});
+    }
     
-        return res.status(200).json({message:'User created' , user: rows});
+    return res.status(200).json({message:'User created' , user: rows});
 }
 
 export const deleteUser = async(req, res) =>{ //* Borrar usuario
