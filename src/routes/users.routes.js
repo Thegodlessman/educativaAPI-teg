@@ -1,8 +1,8 @@
 import { Router } from "express";
 import {createUser, deleteUser, getUsers, getUsersById, loginUser, updatePassword, updateUser} from '../controllers/user.controller.js'
+import capitalizeNames from "../middleware/format.js";
 
 const router = Router();
-
 
 //*Traer a todos los usuarios
 router.get('/users', getUsers)
@@ -17,7 +17,7 @@ router.post('/login', loginUser)
 router.patch('/users/password/:id' , updatePassword)
 
 //*Crear un usuario
-router.post('/users', createUser)
+router.post('/users', capitalizeNames, createUser)
 
 //*Borrar un usuario
 router.delete('/users/:id', deleteUser)
