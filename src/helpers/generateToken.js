@@ -5,11 +5,12 @@ const tokenSign = async (user) => {
         {
             id_user: user.id_user,
             id_role: user.id_role,
+            full_name: user.full_name,
             role: user.rol_name
         },
         process.env.JWT_SECRET,
         {
-            expiresIn: "2h"
+            expiresIn: "24h"
         }
     )
 }
