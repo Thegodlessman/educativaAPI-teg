@@ -4,12 +4,13 @@ const tokenSign = async (user) => {
     return jwt.sign(
         {
             id_user: user.id_user,
-            id_role: user.id_role,
-            role: user.rol_name
+            id_role: user.id_rol,
+            full_name: user.full_name,
+            rol: user.rol_name
         },
         process.env.JWT_SECRET,
         {
-            expiresIn: "2h"
+            expiresIn: "24h"
         }
     )
 }
