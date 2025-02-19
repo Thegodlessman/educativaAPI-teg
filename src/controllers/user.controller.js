@@ -11,7 +11,21 @@ export const getUsers = async (req, res) => { //* Obtener todos los usuarios
 
 export const getUsersById = async (req, res) => { //* Obtener usuario por ID
     const { id } = req.params;
-    const { rows } = await pool.query('SELECT * FROM "users" WHERE id_user = $1', [id]);
+    const { rows } = await pool.query(
+        `SELECT 
+            usuario.id_user, 
+            CONCAT(usuario.user_name,' ', usuario.user_lastname) AS full_name, 
+            usuario.user_ced, 
+            usuario.user_email, 
+            rol.id_rol,
+            rol.rol_name
+        FROM "users" AS usuario 
+        INNER JOIN "roles_users" AS ru 
+        ON usuario.id_user = ru.id_user 
+        INNER JOIN "roles" AS rol 
+        ON ru.id_rol = rol.id_rol
+        WHERE usuario.id_user = $1`, [id]
+    );
 
     if (rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
@@ -53,9 +67,10 @@ export const loginUser = async (req, res) => { //* Iniciar Sesión
                 rol.rol_name
             FROM "users" 
             AS usuario 
-            INNER JOIN "roles" 
-            AS rol 
-            ON usuario.id_rol = rol.id_rol 
+            INNER JOIN "roles_users" AS ru 
+            ON usuario.id_user = ru.id_user 
+            INNER JOIN "roles" AS rol 
+            ON ru.id_rol = rol.id_rol 
             WHERE usuario.user_email = $1`,
             [user_email]
         );
@@ -107,8 +122,8 @@ export const createUser = async (req, res) => { //* Crear Usuario
 
     const passwordHash = await encrypt(user_password);
 
-    // Obtener el ID del rol "Usuario"
-    const queryRole = `SELECT id_rol FROM "roles" WHERE rol_name = 'estudiante'`;
+    // Obtener el ID del rol "Usuario" (ejemplo: 'estudiante')
+    const queryRole = `SELECT id_rol FROM "roles" WHERE rol_name = 'usuario'`;
     const { rows: roleRows } = await pool.query(queryRole);
     const id_rol = roleRows[0].id_rol;
 
@@ -136,29 +151,47 @@ export const createUser = async (req, res) => { //* Crear Usuario
         return res.status(400).json({ message: "La cédula ya ha sido registrada" });
     }
 
+    // Insertar el usuario
     const { rows, rowCount } = await pool.query(
-        `INSERT INTO "users" (id_rol, user_url, user_ced, user_name, user_lastname, user_email, user_password) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7) 
+        `INSERT INTO "users" (user_url, user_ced, user_name, user_lastname, user_email, user_password) 
+        VALUES ($1, $2, $3, $4, $5, $6) 
         RETURNING *`,
-        [id_rol, defaultURL, user_ced, user_name, user_lastname, user_email, passwordHash]
+        [defaultURL, user_ced, user_name, user_lastname, user_email, passwordHash]
     );
 
     if (rowCount === 0) {
         return res.status(404).json({ message: 'Hubo un error al crear el usuario' });
     }
 
-    return res.status(200).json({ message: 'Usuario creado exitosamente', user: rows[0] });
+    const newUser = rows[0];
+
+    // Asignar rol al usuario recién creado (insertar en la tabla intermedia "roles_users")
+    await pool.query(
+        'INSERT INTO "roles_users" (id_user, id_rol) VALUES ($1, $2)',
+        [newUser.id_user, id_rol]
+    );
+
+    return res.status(200).json({ message: 'Usuario creado exitosamente', user: newUser });
 };
 
 export const deleteUser = async (req, res) => { //* Borrar usuario
     const { id } = req.params;
-    const { rows, rowCount } = await pool.query('DELETE FROM "users" WHERE id_user = $1 RETURNING *', [id]);
 
-    if (rowCount === 0) {
-        return res.status(404).json({ message: "Usuario no encontrado" });
+    try {
+        const { rowCount } = await pool.query('DELETE FROM "users" WHERE id_user = $1 RETURNING *', [id]);
+
+        if (rowCount === 0) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+
+        // Eliminar el rol del usuario de la tabla "roles_users"
+        await pool.query('DELETE FROM "roles_users" WHERE id_user = $1', [id]);
+
+        return res.json({ message: "Usuario eliminado" });
+    } catch (error) {
+        console.error("Error eliminando usuario:", error);
+        return res.status(500).json({ message: "Error al eliminar el usuario", error: error.message });
     }
-
-    return res.json({ message: "Usuario eliminado", user: rows[0] });
 };
 
 export const updateUser = async (req, res) => { //* Actualizar Usuario
