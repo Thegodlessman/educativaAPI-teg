@@ -1,5 +1,14 @@
 import { Router } from "express";
-import {createUser, deleteUser, getUsers, getUsersById, loginUser, updatePassword, updateUser} from '../controllers/user.controller.js'
+import {createUser, 
+    deleteUser, 
+    getUsers, 
+    getUsersById, 
+    loginUser, 
+    updatePassword, 
+    updateUser, 
+    updateActiveRole,
+    getRoles
+} from '../controllers/user.controller.js'
 import capitalizeNames from "../middleware/format.js";
 
 const router = Router();
@@ -24,5 +33,9 @@ router.delete('/users/:id', deleteUser)
 
 //*Actualizar un usuario
 router.put('/users/:id', updateUser);
+
+router.patch('/users/update/role/:id', updateActiveRole)
+
+router.get('/profile/roles', getRoles)
 
 export default router; 

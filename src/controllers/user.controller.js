@@ -58,20 +58,17 @@ export const loginUser = async (req, res) => { //* Iniciar Sesión
         // Buscar al usuario por email
         const { rows } = await pool.query(
             `SELECT 
-                usuario.id_user, 
-                CONCAT(usuario.user_name, ' ', usuario.user_lastname) AS full_name, 
-                usuario.user_password, 
-                usuario.user_ced, 
-                usuario.user_email, 
-                rol.id_rol,
-                rol.rol_name
-            FROM "users" 
-            AS usuario 
-            INNER JOIN "roles_users" AS ru 
-            ON usuario.id_user = ru.id_user 
-            INNER JOIN "roles" AS rol 
-            ON ru.id_rol = rol.id_rol 
-            WHERE usuario.user_email = $1`,
+                u.id_user,
+                u.user_name,
+                u.user_lastname,
+                u.user_ced,
+                u.user_email,
+                u.user_password,
+                u.active_role,
+                r.rol_name
+            FROM "users" u
+            LEFT JOIN "roles" r ON u.active_role = r.id_rol
+            WHERE u.user_email = $1`,
             [user_email]
         );
 
@@ -98,8 +95,8 @@ export const loginUser = async (req, res) => { //* Iniciar Sesión
                 ced_user: user.user_ced,
                 name: user.full_name,
                 email: user.user_email,
-                id_rol: user.id_rol,
-                rol: user.rol_name
+                active_role: user.active_role,
+                role_name: user.rol_name
             },
             tokenSession
         });
@@ -119,7 +116,6 @@ export const createUser = async (req, res) => { //* Crear Usuario
     await check('user_password').notEmpty().withMessage('La contraseña es obligatoria').run(req);
 
     const defaultURL = 'AQUI IRA UNA URL';
-
     const passwordHash = await encrypt(user_password);
 
     // Obtener el ID del rol "Usuario" (ejemplo: 'estudiante')
@@ -153,10 +149,10 @@ export const createUser = async (req, res) => { //* Crear Usuario
 
     // Insertar el usuario
     const { rows, rowCount } = await pool.query(
-        `INSERT INTO "users" (user_url, user_ced, user_name, user_lastname, user_email, user_password) 
-        VALUES ($1, $2, $3, $4, $5, $6) 
+        `INSERT INTO "users" (id_user, user_url, user_ced, user_name, user_lastname, user_email, user_password, active_role)
+        VALUES (default, $1, $2, $3, $4, $5, $6, $7) 
         RETURNING *`,
-        [defaultURL, user_ced, user_name, user_lastname, user_email, passwordHash]
+        [defaultURL, user_ced, user_name, user_lastname, user_email, passwordHash, id_rol]
     );
 
     if (rowCount === 0) {
@@ -165,7 +161,6 @@ export const createUser = async (req, res) => { //* Crear Usuario
 
     const newUser = rows[0];
 
-    // Asignar rol al usuario recién creado (insertar en la tabla intermedia "roles_users")
     await pool.query(
         'INSERT INTO "roles_users" (id_user, id_rol) VALUES ($1, $2)',
         [newUser.id_user, id_rol]
@@ -273,4 +268,61 @@ export const updatePassword = async (req, res) => { //* Actualizar contraseña
         console.error("Error durante la actualización de contraseña:", error);
         return res.status(500).json({ message: "Error al actualizar la contraseña", error });
     }
+};
+
+export const updateActiveRole = async (req, res) => {
+    const { id } = req.params; // ID del usuario
+    const { id_rol } = req.body; // Nuevo rol que se desea activar
+    try {
+        const { rows: existingRoles } = await pool.query(
+            'SELECT * FROM "roles_users" WHERE id_user = $1 AND id_rol = $2',
+            [id, id_rol]
+        );
+
+        if (existingRoles.length === 0) {
+            await pool.query(`INSERT INTO "roles_users" ("id_user", "id_rol") VALUES ($1, $2) `,
+            [id, id_rol]);
+        }
+        // Actualizar el rol activo en la tabla "users"
+        const { rowCount } = await pool.query(
+            'UPDATE "users" SET active_role = $1 WHERE id_user = $2',
+            [id_rol, id]
+        );
+        
+        if (rowCount === 0) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+
+        // Obtener el nombre del nuevo rol
+        const { rows: roleDetails } = await pool.query(
+            'SELECT rol_name FROM "roles" WHERE id_rol = $1',
+            [id_rol]
+        );
+        const role_name = roleDetails[0].rol_name;
+        // Obtener los datos actualizados del usuario
+        const { rows: updatedUser } = await pool.query(
+            'SELECT id_user, user_name, user_lastname, active_role FROM "users" WHERE id_user = $1',
+            [id]
+        );
+        // Asignamos el nombre del rol al usuario actualizado
+        updatedUser[0].rol_name = role_name;
+
+        // Generar nuevo token con el rol actualizado
+        const tokenSession = await tokenSign(updatedUser[0]);
+
+        return res.status(200).json({
+            message: "Rol activo actualizado",
+            user: updatedUser[0],
+            tokenSession
+        });
+    } catch (error) {
+        console.error("Error actualizando el rol activo:", error);
+        return res.status(500).json({ message: "Error en el servidor" });
+    }
+};
+
+// Endpoint que devuelve todos los roles
+export const getRoles = async (req, res) => {
+    const { rows } = await pool.query('SELECT * FROM "roles"');
+    res.json({ roles: rows });
 };
