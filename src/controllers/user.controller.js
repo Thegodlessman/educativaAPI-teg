@@ -274,46 +274,47 @@ export const updateActiveRole = async (req, res) => {
     const { id } = req.params; // ID del usuario
     const { id_rol } = req.body; // Nuevo rol que se desea activar
     try {
-      // Verificar que el usuario tenga asignado ese rol en "roles_users"
-    const { rows: existingRoles } = await pool.query(
-        'SELECT * FROM "roles_users" WHERE id_user = $1 AND id_rol = $2',
-        [id, id_rol]
-    );
+        const { rows: existingRoles } = await pool.query(
+            'SELECT * FROM "roles_users" WHERE id_user = $1 AND id_rol = $2',
+            [id, id_rol]
+        );
 
-    if (existingRoles.length === 0) {
-        return res.status(400).json({ message: "El usuario no posee este rol." });
-    }
-      // Actualizar el rol activo en la tabla "users"
-    const { rowCount } = await pool.query(
-        'UPDATE "users" SET active_role = $1 WHERE id_user = $2',
-        [id_rol, id]
-    );
-    if (rowCount === 0) {
-        return res.status(404).json({ message: "Usuario no encontrado" });
-    }
+        if (existingRoles.length === 0) {
+            await pool.query(`INSERT INTO "roles_users" ("id_user", "id_rol") VALUES ($1, $2) `,
+            [id, id_rol]);
+        }
+        // Actualizar el rol activo en la tabla "users"
+        const { rowCount } = await pool.query(
+            'UPDATE "users" SET active_role = $1 WHERE id_user = $2',
+            [id_rol, id]
+        );
+        
+        if (rowCount === 0) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
 
-      // Obtener el nombre del nuevo rol
-    const { rows: roleDetails } = await pool.query(
-        'SELECT rol_name FROM "roles" WHERE id_rol = $1',
-        [id_rol]
-    );
-    const role_name = roleDetails[0].rol_name;
-      // Obtener los datos actualizados del usuario
-    const { rows: updatedUser } = await pool.query(
-        'SELECT id_user, user_name, user_lastname, active_role FROM "users" WHERE id_user = $1',
-        [id]
-    );
-      // Asignamos el nombre del rol al usuario actualizado
-    updatedUser[0].rol_name = role_name;
+        // Obtener el nombre del nuevo rol
+        const { rows: roleDetails } = await pool.query(
+            'SELECT rol_name FROM "roles" WHERE id_rol = $1',
+            [id_rol]
+        );
+        const role_name = roleDetails[0].rol_name;
+        // Obtener los datos actualizados del usuario
+        const { rows: updatedUser } = await pool.query(
+            'SELECT id_user, user_name, user_lastname, active_role FROM "users" WHERE id_user = $1',
+            [id]
+        );
+        // Asignamos el nombre del rol al usuario actualizado
+        updatedUser[0].rol_name = role_name;
 
-      // Generar nuevo token con el rol actualizado
-    const tokenSession = await tokenSign(updatedUser[0]);
+        // Generar nuevo token con el rol actualizado
+        const tokenSession = await tokenSign(updatedUser[0]);
 
-    return res.status(200).json({
-        message: "Rol activo actualizado",
-        user: updatedUser[0],
-        tokenSession
-    });
+        return res.status(200).json({
+            message: "Rol activo actualizado",
+            user: updatedUser[0],
+            tokenSession
+        });
     } catch (error) {
         console.error("Error actualizando el rol activo:", error);
         return res.status(500).json({ message: "Error en el servidor" });
