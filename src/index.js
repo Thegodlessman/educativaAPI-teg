@@ -2,6 +2,7 @@ import express, { urlencoded } from 'express'
 import { PORT } from './config.js'
 import userRoutes from './routes/users.routes.js'
 import profileRoutes from './routes/profile.routes.js'
+import roomRoutes from './routes/room.routes.js'
 import cors from "cors";
 
 const app = express()
@@ -12,6 +13,7 @@ app.use(express.json())
 app.use(cors());
 app.use(userRoutes)
 app.use(profileRoutes)
+app.use(roomRoutes)
 
 app.use(express.static("public"));
 
