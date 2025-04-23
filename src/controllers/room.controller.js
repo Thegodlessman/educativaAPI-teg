@@ -46,3 +46,22 @@ export const getInsti = async (req, res) => {
     return res.status(500).json({ success: false, message: "Error en el servidor" });
   }
 };
+
+export const getMyClasses = async (req, res) => {
+  try {
+    const { id_user } = req.body;
+
+    const { rows } = await pool.query(
+      `SELECT room.id_room, room.code_room, room.secc_room, room.max_room, room.create_date, insti.insti_name 
+      FROM "room" AS room 
+      INNER JOIN "institutions" AS insti ON room.id_institution = insti.id_insti 
+      WHERE admin_room = $1`,
+      [id_user]
+    );
+
+    return res.status(200).json({ success: true, classes: rows });
+  } catch (error) {
+    console.error("Error fetching classes", error);
+    return res.status(500).json({ success: false, message: "Error interno" });
+  }
+};
