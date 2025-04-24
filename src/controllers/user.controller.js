@@ -60,6 +60,7 @@ export const loginUser = async (req, res) => { //* Iniciar Sesión
             `SELECT 
                 u.id_user,
                 u.user_name,
+                u.user_url,
                 u.user_lastname,
                 u.user_ced,
                 u.user_email,
