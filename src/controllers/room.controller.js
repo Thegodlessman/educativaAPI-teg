@@ -1,34 +1,68 @@
 import { pool } from "../db.js";
 import { generateRoomCode } from "../helpers/generateCode.js";
 
-export const createRoom = async (req, res) =>{
-    try {
-        const { secc_room, max_room, id_institution, admin_room } = req.body;
-        const code_room = await generateRoomCode(); // Generar código único
-    
-        const createDate = new Date().toISOString().split("T")[0]; // Fecha actual
-    
-        const query = `
-        INSERT INTO room (code_room, secc_room, max_room, id_institution, admin_room, create_date)
-        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
-        `;
-    
-        const values = [code_room, secc_room, max_room, id_institution, admin_room, createDate];
-    
-        const result = await pool.query(query, values);
-        res.status(201).json({ success: true, room: result.rows[0] });
-    } catch (error) {
-        console.error("Error creando aula:", error);
-        res.status(500).json({ success: false, message: "Error interno del servidor" });
-    }
-}
+export const createRoom = async (req, res) => {
+  try {
+    const { secc_room, max_room, id_institution, admin_room, room_grate } =
+      req.body;
+    const code_room = await generateRoomCode();
+
+    const classroomImages = [
+      `${process.env.CLOUDNARY_URL_IMG}educativa/Classroom1`,
+      `${process.env.CLOUDNARY_URL_IMG}educativa/Classroom2`,
+      `${process.env.CLOUDNARY_URL_IMG}educativa/Classroom3`,
+      `${process.env.CLOUDNARY_URL_IMG}educativa/Classroom4`,
+    ];
+
+    const room_url =
+      classroomImages[Math.floor(Math.random() * classroomImages.length)];
+    const createDate = new Date().toISOString().split("T")[0];
+
+    // 1. Insertamos la clase
+    const insertQuery = `
+      INSERT INTO room (code_room, secc_room, max_room, id_institution, admin_room, create_date, room_url, room_grate)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_room;
+    `;
+    const values = [
+      code_room,
+      secc_room,
+      max_room,
+      id_institution,
+      admin_room,
+      createDate,
+      room_url,
+      room_grate,
+    ];
+    const insertResult = await pool.query(insertQuery, values);
+    const newRoomId = insertResult.rows[0].id_room;
+
+    // 2. Buscamos esa clase con JOIN a institutions para traer insti_name
+    const selectQuery = `
+      SELECT room.id_room, room.room_url, room.room_grate, room.code_room, room.secc_room,room.max_room, room.create_date, insti.insti_name
+      FROM room
+      INNER JOIN institutions AS insti ON room.id_institution = insti.id_insti
+      WHERE room.id_room = $1
+    `;
+    const selectResult = await pool.query(selectQuery, [newRoomId]);
+
+    // 3. Respondemos con todos los datos completos
+    res.status(201).json({ success: true, room: selectResult.rows[0] });
+  } catch (error) {
+    console.error("Error creando aula:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Error interno del servidor" });
+  }
+};
 
 export const getInsti = async (req, res) => {
   try {
     const { id_user } = req.body;
 
     if (!id_user) {
-      return res.status(400).json({ success: false, message: "ID de usuario requerido" });
+      return res
+        .status(400)
+        .json({ success: false, message: "ID de usuario requerido" });
     }
 
     const { rows } = await pool.query(
@@ -43,7 +77,9 @@ export const getInsti = async (req, res) => {
     return res.status(200).json({ success: true, insti: rows });
   } catch (error) {
     console.error("Error en getInsti:", error);
-    return res.status(500).json({ success: false, message: "Error en el servidor" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Error en el servidor" });
   }
 };
 
@@ -52,7 +88,7 @@ export const getMyClasses = async (req, res) => {
     const { id_user } = req.body;
 
     const { rows } = await pool.query(
-      `SELECT room.id_room, room.code_room, room.secc_room, room.max_room, room.create_date, insti.insti_name 
+      `SELECT room.id_room, room.room_url, room.room_grate, room.code_room, room.secc_room, room.max_room, room.create_date, insti.insti_name 
       FROM "room" AS room 
       INNER JOIN "institutions" AS insti ON room.id_institution = insti.id_insti 
       WHERE admin_room = $1`,
