@@ -116,7 +116,7 @@ export const createUser = async (req, res) => { //* Crear Usuario
     await check('user_email').notEmpty().withMessage('El correo es obligatorio').isEmail().withMessage("El correo no es válido").run(req);
     await check('user_password').notEmpty().withMessage('La contraseña es obligatoria').run(req);
 
-    const defaultURL = 'AQUI IRA UNA URL';
+    const defaultURL = `${process.env.CLOUDNARY_URL_IMG}educativa/Educativa-Profile`;
     const passwordHash = await encrypt(user_password);
 
     // Obtener el ID del rol "Usuario" (ejemplo: 'estudiante')

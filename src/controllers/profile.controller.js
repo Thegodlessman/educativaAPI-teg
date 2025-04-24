@@ -36,7 +36,8 @@ export const selectRole = async (req, res) => {
         const { rows } = await pool.query(
             `SELECT 
                 usuario.id_user, 
-                CONCAT(usuario.user_name,' ', usuario.user_lastname) AS full_name, 
+                usuario.user_url,
+                CONCAT(usuario.user_name,' ',usuario.user_lastname) AS full_name, 
                 usuario.user_ced, 
                 usuario.user_email, 
                 rol.id_rol,
