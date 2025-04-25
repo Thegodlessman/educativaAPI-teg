@@ -302,7 +302,7 @@ export const updateActiveRole = async (req, res) => {
         const role_name = roleDetails[0].rol_name;
         // Obtener los datos actualizados del usuario
         const { rows: updatedUser } = await pool.query(
-            'SELECT id_user, user_name, user_lastname, active_role FROM "users" WHERE id_user = $1',
+            'SELECT id_user, user_url, user_name, user_lastname, active_role FROM "users" WHERE id_user = $1',
             [id]
         );
         // Asignamos el nombre del rol al usuario actualizado
