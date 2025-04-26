@@ -1,9 +1,8 @@
 import { Router } from "express";
-import { getRoleId, selectRole, getInstiByParish,setupUserProfile, getCountries, getStatesByCountry, getMunicipalitiesByState, getParishesByMunicipality } from "../controllers/profile.controller.js";
+import { getRoleId, getInstiByParish,setupUserProfile, getCountries, getStatesByCountry, getMunicipalitiesByState, getParishesByMunicipality } from "../controllers/profile.controller.js";
 
 const profileRouter = Router();
 
-profileRouter.patch('/profile/role/:id', selectRole);
 profileRouter.get('/profile/get/role/:rol_name', getRoleId);
 
 profileRouter.get('/profile/get/countries', getCountries)

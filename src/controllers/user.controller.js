@@ -59,9 +59,8 @@ export const loginUser = async (req, res) => { //* Iniciar Sesión
         const { rows } = await pool.query(
             `SELECT 
                 u.id_user,
-                u.user_name,
+                CONCAT(u.user_name,' ',u.user_lastname) AS full_name,
                 u.user_url,
-                u.user_lastname,
                 u.user_ced,
                 u.user_email,
                 u.user_password,
