@@ -1,6 +1,6 @@
 import express from "express";
-import upload from "../config/multer.js";
-import { uploadProfilePicture } from "../controllers/userController.js";
+import upload from "../multer.js";
+import { uploadProfilePicture} from "../controllers/cloudinary.controller.js";
 
 const router = express.Router();
 

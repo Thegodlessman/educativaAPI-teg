@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getRoleId, selectRole, getInstiByParish, getCountries, getStatesByCountry, getMunicipalitiesByState, getParishesByMunicipality } from "../controllers/profile.controller.js";
+import { getRoleId, selectRole, getInstiByParish,setupUserProfile, getCountries, getStatesByCountry, getMunicipalitiesByState, getParishesByMunicipality } from "../controllers/profile.controller.js";
 
 const profileRouter = Router();
 
@@ -11,5 +11,7 @@ profileRouter.get('/profile/get/stateByCountries/:id_country', getStatesByCountr
 profileRouter.get('/profile/get/munByStates/:id_state', getMunicipalitiesByState)
 profileRouter.get('/profile/get/parishesByMunicipality/:id_mun', getParishesByMunicipality)
 profileRouter.get('/profile/get/institutionsByParish/:id_parish', getInstiByParish)
+
+profileRouter.put("/profile/setup/:id", setupUserProfile);
 
 export default profileRouter; 

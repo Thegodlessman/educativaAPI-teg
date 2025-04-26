@@ -1,4 +1,4 @@
-import cloudinary from "../cloudinary";
+import cloudinary from "../cloudinary.js";
 import streamifier from "streamifier"
 
 export const uploadProfilePicture = async (req, res) => {

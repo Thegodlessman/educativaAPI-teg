@@ -168,3 +168,62 @@ export const getParishesByMunicipality = async (req, res) => {
     return res.status(500).json({ error: 'Error al obtener parroquias' });
   }
 };
+
+export const setupUserProfile = async (req, res) => {
+  const { id } = req.params;
+  const { institution, photoUrl } = req.body;
+
+  try {
+    // Validar que el usuario existe
+    const { rows: userRows } = await pool.query(
+      'SELECT id_user FROM "users" WHERE id_user = $1',
+      [id]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Validar que la institución existe
+    const { rows: instiRows } = await pool.query(
+      'SELECT id_insti FROM "institutions" WHERE id_insti = $1',
+      [institution]
+    );
+
+    if (instiRows.length === 0) {
+      return res.status(404).json({ message: "Institución no encontrada" });
+    }
+
+    // Verificar si ya existe la relación usuario-institución
+    const { rows: relationRows } = await pool.query(
+      'SELECT * FROM "users_institutions" WHERE id_user = $1 AND id_institution = $2',
+      [id, institution]
+    );
+
+    if (relationRows.length > 0) {
+      return res.status(400).json({ message: "Este usuario ya está registrado en esta institución" });
+    }
+
+    // Insertar en tabla intermedia
+    await pool.query(
+      'INSERT INTO "users_institutions" (id_user, id_institution) VALUES ($1, $2)',
+      [id, institution]
+    );
+
+    // Actualizar la foto de perfil si viene
+    if (photoUrl) {
+      await pool.query(
+        `UPDATE "users"
+         SET user_url = $1
+         WHERE id_user = $2`,
+        [photoUrl, id]
+      );
+    }
+
+    return res.status(200).json({ message: "Perfil configurado exitosamente" });
+
+  } catch (error) {
+    console.error("Error al configurar perfil:", error);
+    return res.status(500).json({ message: "Error al configurar el perfil", error: error.message });
+  }
+};
