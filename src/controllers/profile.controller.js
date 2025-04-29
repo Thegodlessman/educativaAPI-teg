@@ -1,5 +1,4 @@
 import { pool } from "../db.js";
-import { validationResult } from "express-validator";
 import { tokenSign } from "../helpers/generateToken.js";
 
 export const getRoleId = async (req, res) => {
@@ -201,10 +200,8 @@ export const setupUserProfile = async (req, res) => {
       }
 
       const user = rows[0];
-      console.log("Datos del usuario para el token:", user);
 
       const tokenSession = await tokenSign(user);
-      console.log("Token generado:", tokenSession);
 
       return res.status(200).json({
           message: "Perfil configurado exitosamente",
