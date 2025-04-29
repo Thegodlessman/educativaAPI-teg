@@ -64,16 +64,18 @@ export const getTestsByRoom = async (req, res) => {
 
         const query = `
         SELECT 
-          t.id_test,
-          u.name AS student_name,
-          rl.risk_name,
-          t.final_score,
-          t.test_date
-        FROM tests t
-        INNER JOIN users u ON t.id_user = u.id_user
-        INNER JOIN risk_levels rl ON t.id_risk_level = rl.id_risk_level
-        WHERE t.id_room = $1
-        ORDER BY t.test_date DESC
+        u.id_user,
+        CONCAT(u.user_name,' ',u.user_lastname) AS student_name,
+        t.id_test,
+        rl.risk_name,
+        t.final_score,
+        t.test_date
+      FROM user_room ur
+      INNER JOIN users u ON ur.id_user = u.id_user
+      LEFT JOIN tests t ON t.id_user = u.id_user AND t.id_room = ur.id_room
+      LEFT JOIN risk_levels rl ON t.id_risk_level = rl.id_risk_level
+      WHERE ur.id_room = $1
+      ORDER BY student_name ASC
       `;
 
         const { rows } = await pool.query(query, [id_room]);
