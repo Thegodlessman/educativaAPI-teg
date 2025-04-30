@@ -104,22 +104,38 @@ export const getMyClasses = async (req, res) => {
 };
 
 export const joinRoom = async (req, res) => {
-  const { code_room, id_user } = req.body
+  const { code_room, id_user } = req.body;
 
   try {
-    const { rowCount, rows } = await pool.query(`SELECT * FROM room WHERE code_room = $1`, [code_room])
+    // Buscar la sala por código
+    const { rowCount, rows } = await pool.query(`SELECT * FROM room WHERE code_room = $1`, [code_room]);
 
     if (rowCount === 0) {
-      return res.status(404).json({ message: "Sala no encontrada" })
+      return res.status(404).json({ message: "Sala no encontrada" });
     }
 
     const id_room = rows[0].id_room;
-    
-    await pool.query('INSERT INTO user_room (id_user, id_room) VALUES ($1, $2)', [id_user, id_room])
 
-    res.status(200).json({message: 'Se ha agregado correctamente'})
+    // Verificar si el usuario ya está en la sala
+    const checkUser = await pool.query(
+      'SELECT * FROM user_room WHERE id_user = $1 AND id_room = $2',
+      [id_user, id_room]
+    );
+
+    if (checkUser.rowCount > 0) {
+      return res.status(400).json({ message: "Ya estás unido a esta clase" });
+    }
+
+    // Insertar si no está unido aún
+    await pool.query(
+      'INSERT INTO user_room (id_user, id_room) VALUES ($1, $2)',
+      [id_user, id_room]
+    );
+
+    res.status(200).json({ message: "Unido a la sala exitosamente", id_room });
+
   } catch (error) {
-    console.error('Error al unise a la sala:', error);
+    console.error('Error al unirse a la sala:', error);
     res.status(500).json({ error: 'Error al unirse' });
   }
-}
+};
