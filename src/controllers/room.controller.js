@@ -1,3 +1,4 @@
+import { response } from "express";
 import { pool } from "../db.js";
 import { generateRoomCode } from "../helpers/generateCode.js";
 
@@ -101,3 +102,24 @@ export const getMyClasses = async (req, res) => {
     return res.status(500).json({ success: false, message: "Error interno" });
   }
 };
+
+export const joinRoom = async (req, res) => {
+  const { code_room, id_user } = req.body
+
+  try {
+    const { rowCount, rows } = await pool.query(`SELECT * FROM room WHERE code_room = $1`, [code_room])
+
+    if (rowCount === 0) {
+      return res.status(404).json({ message: "Sala no encontrada" })
+    }
+
+    const id_room = rows[0].id_room;
+    
+    await pool.query('INSERT INTO user_room (id_user, id_room) VALUES ($1, $2)', [id_user, id_room])
+
+    res.status(200).json({message: 'Se ha agregado correctamente'})
+  } catch (error) {
+    console.error('Error al unise a la sala:', error);
+    res.status(500).json({ error: 'Error al unirse' });
+  }
+}
