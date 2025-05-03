@@ -59,8 +59,8 @@ export const loginUser = async (req, res) => { //* Iniciar Sesión
         const { rows } = await pool.query(
             `SELECT 
                 u.id_user,
-                u.user_name,
-                u.user_lastname,
+                CONCAT(u.user_name,' ',u.user_lastname) AS full_name,
+                u.user_url,
                 u.user_ced,
                 u.user_email,
                 u.user_password,
@@ -115,7 +115,7 @@ export const createUser = async (req, res) => { //* Crear Usuario
     await check('user_email').notEmpty().withMessage('El correo es obligatorio').isEmail().withMessage("El correo no es válido").run(req);
     await check('user_password').notEmpty().withMessage('La contraseña es obligatoria').run(req);
 
-    const defaultURL = 'AQUI IRA UNA URL';
+    const defaultURL = `${process.env.CLOUDNARY_URL_IMG}educativa/Educativa-Profile`;
     const passwordHash = await encrypt(user_password);
 
     // Obtener el ID del rol "Usuario" (ejemplo: 'estudiante')
@@ -301,7 +301,7 @@ export const updateActiveRole = async (req, res) => {
         const role_name = roleDetails[0].rol_name;
         // Obtener los datos actualizados del usuario
         const { rows: updatedUser } = await pool.query(
-            'SELECT id_user, user_name, user_lastname, active_role FROM "users" WHERE id_user = $1',
+            'SELECT id_user, user_url, user_name, user_lastname, active_role FROM "users" WHERE id_user = $1',
             [id]
         );
         // Asignamos el nombre del rol al usuario actualizado
