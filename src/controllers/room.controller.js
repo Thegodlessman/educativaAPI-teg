@@ -84,7 +84,7 @@ export const getInsti = async (req, res) => {
   }
 };
 
-export const getMyClasses = async (req, res) => {
+export const getCreatedClass = async (req, res) => {
   try {
     const { id_user } = req.body;
 
@@ -111,7 +111,7 @@ export const joinRoom = async (req, res) => {
     const { rowCount, rows } = await pool.query(`SELECT * FROM room WHERE code_room = $1`, [code_room]);
 
     if (rowCount === 0) {
-      return res.status(404).json({ message: "Sala no encontrada" });
+      return res.status(404).json({ message: "Clase no encontrada, verifique el codigo" });
     }
 
     const id_room = rows[0].id_room;
@@ -135,7 +135,25 @@ export const joinRoom = async (req, res) => {
     res.status(200).json({ message: "Unido a la sala exitosamente", id_room });
 
   } catch (error) {
-    console.error('Error al unirse a la sala:', error);
+    console.error('Error al unirse a la clase:', error);
     res.status(500).json({ error: 'Error al unirse' });
   }
 };
+
+export const getJoinedClass = async (req, res) => {
+  const { id_user } = req.body
+
+  try {
+    const { rows } = await pool.query(`
+      SELECT r.*, i.insti_name FROM "room" AS r 
+      INNER JOIN user_room AS ur ON ur.id_room = r.id_room 
+      INNER JOIN institutions AS i ON i.id_insti = r.id_institution 
+      WHERE ur.id_user = $1`, 
+      [id_user]
+    );
+
+    return res.status(200).json({ classes: rows })
+  } catch (error) {
+    return res.status(500).json({ message: 'Error al obtener las clases' })
+  }
+}
