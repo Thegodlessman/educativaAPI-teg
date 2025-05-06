@@ -70,13 +70,12 @@ export const getTestsByRoom = async (req, res) => {
         rl.risk_name,
         t.final_score,
         t.test_date
-      FROM user_room ur
-      INNER JOIN users u ON ur.id_user = u.id_user
-      LEFT JOIN tests t ON t.id_user = u.id_user AND t.id_room = ur.id_room
-      LEFT JOIN risk_levels rl ON t.id_risk_level = rl.id_risk_level
-      WHERE ur.id_room = $1
-      ORDER BY student_name ASC
-      `;
+        FROM user_room ur
+        INNER JOIN users u ON ur.id_user = u.id_user
+        LEFT JOIN tests t ON t.id_user = u.id_user AND t.id_room = ur.id_room
+        LEFT JOIN risk_levels rl ON t.id_risk_level = rl.id_risk_level
+        WHERE ur.id_room = $1
+        ORDER BY student_name ASC`;
 
         const { rows } = await pool.query(query, [id_room]);
 
