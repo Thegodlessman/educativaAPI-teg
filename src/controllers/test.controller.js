@@ -52,9 +52,11 @@ export const getTestsByRoom = async (req, res) => {
             u.id_user,
             CONCAT(u.user_name,' ',u.user_lastname) AS student_name,
             t.id_test,
-            rl.risk_name, -- Usar risk_name para mostrar
+            t.id_risk_level,
+            rl.risk_name,
             t.final_score,
-            t.test_date
+            t.test_date,
+            t.recommendation
         FROM user_room ur
         INNER JOIN users u ON ur.id_user = u.id_user
         LEFT JOIN tests t ON t.id_user_room = ur.id_user_room AND ur.id_room = $1 -- Asegurar que el test pertenezca a ESTA sala
@@ -184,3 +186,20 @@ export const getStudentTestStatus = async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 };
+
+export const getTestMetricsByTestId = async (req, res) => {
+    const { id_test } = req.params;
+    try {
+        const result = await pool.query(
+            "SELECT * FROM test_metrics WHERE id_test = $1",
+            [id_test]
+        );
+        if (result.rows.length === 0) {
+            return res.status(200).json([]); 
+        }
+        res.status(200).json(result.rows[0]); 
+    } catch (error) {
+        console.error("Error obteniendo métricas del test:", error);
+        res.status(500).json({ message: "Error interno al obtener las métricas del test." });
+    }
+}

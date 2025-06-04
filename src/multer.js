@@ -1,4 +1,3 @@
-// backend/config/multer.js
 import multer from "multer";
 
 const storage = multer.memoryStorage();
